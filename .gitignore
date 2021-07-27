@@ -1,2 +1,9 @@
 # Project exclude paths
 /target/
+/h202_bom_map.xlsx
+/package_items_bom.xlsx
+/test.xlsx
+/test2.xlsx
+/test_repaired.xlsx
+/configurators/
+/lib/
