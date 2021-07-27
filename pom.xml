@@ -6,7 +6,7 @@
 
     <groupId>org.conversion</groupId>
     <artifactId>POMConversion</artifactId>
-    <version>1.0.0</version>
+    <version>3.2.0</version>
     <name>POM Conversion</name>
     <packaging>jar</packaging>
     <developers>
