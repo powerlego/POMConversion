@@ -259,7 +259,8 @@ public class Configurators implements Task{
                     }
                     opcPackage.revert();
                     try {
-                        FileOutputStream fileOutputStream = new FileOutputStream(Paths.get("./h202_bom_map.xlsx")
+                        String configuratorName = configurator.getName().split(" Configurator")[0].toLowerCase();
+                        FileOutputStream fileOutputStream = new FileOutputStream(Paths.get("./" + configuratorName + "_bom_map.xlsx")
                                                                                       .toFile());
                         workbook.write(fileOutputStream);
                         workbook.close();
