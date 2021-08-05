@@ -8,6 +8,7 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.*;
 import org.conversion.tasks.assemblies.AssemblyItem;
 import org.conversion.tasks.assemblies.AssemblyMaster;
+import org.conversion.tasks.assemblies.ItemGroup;
 import org.conversion.utils.Utils;
 
 import java.io.File;
@@ -19,7 +20,7 @@ import java.util.*;
 /**
  * @author Nicholas Curl
  */
-public class Configurators implements Task{
+public class Configurators implements Task {
 
     /**
      * The instance of the logger
@@ -37,7 +38,8 @@ public class Configurators implements Task{
                 try {
                     opcPackage = OPCPackage.open(configurator);
                     inputWorkbook = new XSSFWorkbook(opcPackage);
-                } catch (InvalidFormatException | IOException exception){
+                }
+                catch (InvalidFormatException | IOException exception) {
                     inputWorkbook = null;
                     opcPackage = null;
                     logger.fatal("Unable to read workbook", exception);
@@ -85,7 +87,7 @@ public class Configurators implements Task{
                                     logger.fatal("Unable to get item name");
                                     System.exit(1);
                                 }
-                                boms.put(itemNum, new AssemblyMaster(name,itemNum));
+                                boms.put(itemNum, new AssemblyMaster(name, itemNum));
                             }
                             else {
                                 break;
@@ -114,8 +116,8 @@ public class Configurators implements Task{
                         }
                         master.add(row);
                     }
-                    XSSFSheet sheet = workbook.createSheet("NS BOM Import");
-                    XSSFRow headerRow = sheet.createRow(0);
+                    XSSFSheet ns_bom_import = workbook.createSheet("NS BOM Import");
+                    XSSFRow headerRow = ns_bom_import.createRow(0);
                     XSSFCell headerCell = headerRow.createCell(0);
                     XSSFCellStyle headerStyle = workbook.createCellStyle();
                     headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
@@ -148,14 +150,14 @@ public class Configurators implements Task{
                     headerCell.setCellStyle(headerStyle);
                     int rowCount = 1;
                     for (AssemblyMaster assemblyMaster : boms.values()) {
-                        XSSFRow row = sheet.createRow(rowCount);
+                        XSSFRow row = ns_bom_import.createRow(rowCount);
                         XSSFCell cell = row.createCell(0);
                         cell.setCellValue(assemblyMaster.getKey());
                         rowCount++;
                     }
-                    sheet.autoSizeColumn(0);
-                    sheet = workbook.createSheet("NS BOM Revision Import");
-                    headerRow = sheet.createRow(0);
+                    ns_bom_import.autoSizeColumn(0);
+                    ns_bom_import = workbook.createSheet("NS BOM Revision Import");
+                    headerRow = ns_bom_import.createRow(0);
                     int itemCount = 0;
                     int itemStart = 0;
                     for (List<Object> row : master) {
@@ -168,10 +170,10 @@ public class Configurators implements Task{
                         }
                     }
                     Map<AssemblyMaster, List<AssemblyItem>> assemblies = new HashMap<>();
-                    for (int itemNum : boms.keySet()){
+                    for (int itemNum : boms.keySet()) {
                         int col = Utils.findBOMColumn(itemNum, master.get(0));
                         AssemblyMaster assemblyMaster = boms.get(itemNum);
-                        if(!assemblies.containsKey(assemblyMaster)){
+                        if (!assemblies.containsKey(assemblyMaster)) {
                             assemblies.put(assemblyMaster, new ArrayList<>());
                         }
                         if (col != Integer.MAX_VALUE) {
@@ -184,7 +186,11 @@ public class Configurators implements Task{
                                         String assemblyItemKey = masterRow.get(1).toString();
                                         String assemblyItemDesc = masterRow.get(4).toString();
                                         int qty = getIntValue(quantityObject);
-                                        AssemblyItem assemblyItem = new AssemblyItem(assemblyItemItemNum,assemblyItemKey,assemblyItemDesc,qty);
+                                        AssemblyItem assemblyItem = new AssemblyItem(assemblyItemItemNum,
+                                                                                     assemblyItemKey,
+                                                                                     assemblyItemDesc,
+                                                                                     qty
+                                        );
                                         assemblies.get(assemblyMaster).add(assemblyItem);
                                     }
                                 }
@@ -226,7 +232,7 @@ public class Configurators implements Task{
                     }
                     rowCount = 1;
                     for (AssemblyMaster assemblyMaster : assemblies.keySet()) {
-                        XSSFRow row = sheet.createRow(rowCount);
+                        XSSFRow row = ns_bom_import.createRow(rowCount);
                         XSSFCell cell = row.createCell(0);
                         cell.setCellValue(assemblyMaster.getItemNum());
                         cell = row.createCell(1);
@@ -242,7 +248,7 @@ public class Configurators implements Task{
                                 cell.setCellValue(assemblyItem.getItemNum());
                                 cellCount++;
                                 cell = row.createCell(cellCount);
-                                cell.setCellValue(assemblyItem.getKey()+" " +assemblyItem.getDescription());
+                                cell.setCellValue(assemblyItem.getKey() + " " + assemblyItem.getDescription());
                                 cellCount++;
                                 cell = row.createCell(cellCount);
                                 cell.setCellValue(assemblyItem.getQty());
@@ -254,13 +260,149 @@ public class Configurators implements Task{
                             System.exit(1);
                         }
                     }
-                    for (int i = 0; i < Utils.getLastColumn(sheet); i++) {
-                        sheet.autoSizeColumn(i);
+                    for (int i = 0; i < Utils.getLastColumn(ns_bom_import); i++) {
+                        ns_bom_import.autoSizeColumn(i);
+                    }
+                    List<ItemGroup> itemGroups = new ArrayList<>();
+                    for (Sheet sheet : inputWorkbook) {
+                        XSSFSheet xssfSheet = (XSSFSheet) sheet;
+                        if (!xssfSheet.getSheetName().toLowerCase(Locale.ROOT).contains("master")) {
+                            XSSFRow headRow = xssfSheet.getRow(0);
+                            for (Cell cell : headRow) {
+                                if (cell == null ||
+                                    Utils.getCellValue((XSSFCell) cell,
+                                                       inputWorkbook.getCreationHelper().createFormulaEvaluator()
+                                    ) ==
+                                    null || Utils.getCellValue((XSSFCell) cell,
+                                                               inputWorkbook.getCreationHelper()
+                                                                            .createFormulaEvaluator()
+                                ).toString().equalsIgnoreCase("Key") ||
+                                    cell.getCellType() == CellType.BLANK) {
+                                    continue;
+                                }
+                                int col = cell.getColumnIndex();
+                                ItemGroup itemGroup = new ItemGroup(cell.getStringCellValue(),
+                                                                    xssfSheet.getRow(2)
+                                                                             .getCell(col)
+                                                                             .getStringCellValue()
+                                );
+                                for (Row row : xssfSheet) {
+                                    XSSFRow xssfRow = (XSSFRow) row;
+                                    XSSFCell xssfCell = xssfRow.getCell(0);
+                                    if (xssfCell == null || xssfCell.getCellType().equals(CellType.BLANK)) {
+                                        Object value = Utils.getCellValue(xssfRow.getCell(1),
+                                                                          inputWorkbook.getCreationHelper()
+                                                                                       .createFormulaEvaluator()
+                                        );
+                                        if (value == null) {
+                                            continue;
+                                        }
+                                        Object nameValue = Utils.getCellValue(xssfRow.getCell(2),
+                                                                              inputWorkbook.getCreationHelper()
+                                                                                           .createFormulaEvaluator()
+                                        );
+                                        String name;
+                                        if (nameValue != null) {
+                                            name = nameValue.toString();
+                                        }
+                                        else {
+                                            name = "";
+                                            logger.fatal("Unable to get item name");
+                                            System.exit(1);
+                                        }
+                                        Object qtyValue = Utils.getCellValue(xssfRow.getCell(col),
+                                                                             inputWorkbook.getCreationHelper()
+                                                                                          .createFormulaEvaluator()
+                                        );
+                                        int qty;
+                                        if (qtyValue instanceof Integer) {
+                                            qty = (int) qtyValue;
+                                        }
+                                        else if (qtyValue != null) {
+                                            try {
+                                                qty = (int) Double.parseDouble(qtyValue.toString());
+                                            }
+                                            catch (NumberFormatException e) {
+                                                qty = 0;
+                                                logger.fatal("Unable to get Item Qty", e);
+                                                System.exit(1);
+                                            }
+                                        }
+                                        else {
+                                            qty = 0;
+                                            logger.fatal("Unable to get Item Qty");
+                                            System.exit(1);
+                                        }
+                                        if (qty != 0) {
+                                            itemGroup.addItem(name, qty);
+                                        }
+                                    }
+                                    else {
+                                        break;
+                                    }
+                                }
+                                itemGroups.add(itemGroup);
+                            }
+                        }
+                    }
+                    XSSFSheet ns_item_group = workbook.createSheet("NS Item Group");
+                    itemCount = 0;
+                    for (ItemGroup itemGroup : itemGroups) {
+                        if (itemGroup.getItems().size() > itemCount) {
+                            itemCount = itemGroup.getItems().size();
+                        }
+                    }
+                    headerRow = ns_item_group.createRow(0);
+                    headerCell = headerRow.createCell(0);
+                    headerCell.setCellValue("Item Name/Number");
+                    headerCell.setCellStyle(headerStyle);
+                    headerCell = headerRow.createCell(1);
+                    headerCell.setCellValue("Display Name/Code");
+                    headerCell.setCellStyle(headerStyle);
+                    headerCell = headerRow.createCell(2);
+                    headerCell.setCellValue("Description");
+                    headerCell.setCellStyle(headerStyle);
+                    cellCount = 3;
+                    for (int i = 0; i < itemCount; i++) {
+                        headerCell = headerRow.createCell(cellCount);
+                        headerCell.setCellValue("Component " + (i + 1) + "- Item");
+                        headerCell.setCellStyle(headerStyle);
+                        cellCount++;
+                        headerCell = headerRow.createCell(cellCount);
+                        headerCell.setCellValue("Component " + (i + 1) + " - Quantity");
+                        headerCell.setCellStyle(headerStyle);
+                        cellCount++;
+                    }
+                    rowCount = 1;
+                    for (ItemGroup itemGroup : itemGroups) {
+                        XSSFRow row = ns_item_group.createRow(rowCount);
+                        XSSFCell cell = row.createCell(0);
+                        cell.setCellValue(itemGroup.getKey());
+                        cell = row.createCell(1);
+                        cell.setCellValue(itemGroup.getDescription());
+                        cell = row.createCell(2);
+                        cell.setCellValue(itemGroup.getDescription());
+                        rowCount++;
+                        cellCount = 3;
+                        Map<String, Integer> items = itemGroup.getItems();
+                        for (String name : items.keySet()) {
+                            cell = row.createCell(cellCount);
+                            cell.setCellValue(name);
+                            cellCount++;
+                            cell = row.createCell(cellCount);
+                            cell.setCellValue(items.get(name));
+                            cellCount++;
+                        }
+                    }
+                    for (int i = 0; i < Utils.getLastColumn(ns_item_group); i++) {
+                        ns_item_group.autoSizeColumn(i);
                     }
                     opcPackage.revert();
                     try {
                         String configuratorName = configurator.getName().split(" Configurator")[0].toLowerCase();
-                        FileOutputStream fileOutputStream = new FileOutputStream(Paths.get("./" + configuratorName + "_bom_map.xlsx")
+                        FileOutputStream fileOutputStream = new FileOutputStream(Paths.get("./" +
+                                                                                           configuratorName +
+                                                                                           "_bom_map.xlsx")
                                                                                       .toFile());
                         workbook.write(fileOutputStream);
                         workbook.close();
@@ -279,31 +421,34 @@ public class Configurators implements Task{
         }
     }
 
-    private int getIntValue(Object o){
-        if(o instanceof Double){
+    private int getIntValue(Object o) {
+        if (o instanceof Double) {
             double aDouble = (double) o;
             return (int) aDouble;
         }
-        else if(o instanceof Integer){
+        else if (o instanceof Integer) {
             return (int) o;
         }
         else {
             String str = o.toString();
-            if(str!=null){
+            if (str != null) {
                 str = str.strip();
-                if(str.contains(".")){
-                    try{
+                if (str.contains(".")) {
+                    try {
                         double val = Double.parseDouble(str);
                         return (int) val;
-                    } catch (NumberFormatException e){
+                    }
+                    catch (NumberFormatException e) {
                         logger.fatal("Invalid value", e);
                         System.exit(1);
                         return Integer.MIN_VALUE;
                     }
-                }else {
+                }
+                else {
                     try {
                         return Integer.parseInt(str);
-                    } catch (NumberFormatException e){
+                    }
+                    catch (NumberFormatException e) {
                         logger.fatal("Invalid value", e);
                         System.exit(1);
                         return Integer.MIN_VALUE;
