@@ -354,44 +354,31 @@ public class Configurators implements Task {
                     }
                     headerRow = ns_item_group.createRow(0);
                     headerCell = headerRow.createCell(0);
-                    headerCell.setCellValue("Item Name/Number");
+                    headerCell.setCellValue("Item Group");
                     headerCell.setCellStyle(headerStyle);
                     headerCell = headerRow.createCell(1);
-                    headerCell.setCellValue("Display Name/Code");
-                    headerCell.setCellStyle(headerStyle);
-                    headerCell = headerRow.createCell(2);
                     headerCell.setCellValue("Description");
                     headerCell.setCellStyle(headerStyle);
-                    cellCount = 3;
-                    for (int i = 0; i < itemCount; i++) {
-                        headerCell = headerRow.createCell(cellCount);
-                        headerCell.setCellValue("Component " + (i + 1) + "- Item");
-                        headerCell.setCellStyle(headerStyle);
-                        cellCount++;
-                        headerCell = headerRow.createCell(cellCount);
-                        headerCell.setCellValue("Component " + (i + 1) + " - Quantity");
-                        headerCell.setCellStyle(headerStyle);
-                        cellCount++;
-                    }
+                    headerCell = headerRow.createCell(2);
+                    headerCell.setCellValue("Member Item");
+                    headerCell.setCellStyle(headerStyle);
+                    headerCell = headerRow.createCell(3);
+                    headerCell.setCellValue("Member Item Quantity");
+                    headerCell.setCellStyle(headerStyle);
                     rowCount = 1;
                     for (ItemGroup itemGroup : itemGroups) {
-                        XSSFRow row = ns_item_group.createRow(rowCount);
-                        XSSFCell cell = row.createCell(0);
-                        cell.setCellValue(itemGroup.getKey());
-                        cell = row.createCell(1);
-                        cell.setCellValue(itemGroup.getDescription());
-                        cell = row.createCell(2);
-                        cell.setCellValue(itemGroup.getDescription());
-                        rowCount++;
-                        cellCount = 3;
                         Map<String, Integer> items = itemGroup.getItems();
                         for (String name : items.keySet()) {
-                            cell = row.createCell(cellCount);
+                            XSSFRow row = ns_item_group.createRow(rowCount);
+                            XSSFCell cell = row.createCell(0);
+                            cell.setCellValue(itemGroup.getKey());
+                            cell = row.createCell(1);
+                            cell.setCellValue(itemGroup.getDescription());
+                            cell = row.createCell(2);
                             cell.setCellValue(name);
-                            cellCount++;
-                            cell = row.createCell(cellCount);
+                            cell = row.createCell(3);
                             cell.setCellValue(items.get(name));
-                            cellCount++;
+                            rowCount++;
                         }
                     }
                     for (int i = 0; i < Utils.getLastColumn(ns_item_group); i++) {
