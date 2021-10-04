@@ -95,6 +95,13 @@ public class Configurators implements Task {
                         }
                     }
                 }
+                if (configurator.toString().matches(".*L300.*") == true) {
+                    boms.put(20137, new AssemblyMaster("5Mx4M 24\" Insulated HDS 13'", 20137));
+                    boms.put(20138, new AssemblyMaster("5Mx5M 24\" Insulated HDS 16'", 20138));
+                    boms.put(20139, new AssemblyMaster("5Mx6M 24\" Insulated HDS 20'", 20139));
+                    boms.put(20149, new AssemblyMaster("5Mx2.5M 24\" Insulated HDS 8'", 20149));
+                    boms.put(20150, new AssemblyMaster("5Mx3M 24\" Insulated HDS 10'", 20150));
+                }
                 XSSFSheet masterSheet = null;
                 for (Sheet sheet : inputWorkbook) {
                     if (sheet.getSheetName().toLowerCase(Locale.ROOT).contains("master")) {
@@ -238,7 +245,7 @@ public class Configurators implements Task {
                         cell = row.createCell(1);
                         cell.setCellValue(assemblyMaster.getKey());
                         cell = row.createCell(2);
-                        cell.setCellValue(assemblyMaster.getKey() + " Rev A");
+                        cell.setCellValue(assemblyMaster.getKey() + " Rev C"); //
                         rowCount++;
                         int col = Utils.findBOMColumn(assemblyMaster.getItemNum(), master.get(0));
                         if (col != Integer.MAX_VALUE) {
@@ -266,6 +273,11 @@ public class Configurators implements Task {
                     List<ItemGroup> itemGroups = new ArrayList<>();
                     for (Sheet sheet : inputWorkbook) {
                         XSSFSheet xssfSheet = (XSSFSheet) sheet;
+                        if (xssfSheet.getSheetName().toLowerCase(Locale.ROOT).contains("parts list") //||
+                                //xssfSheet.getSheetName().toLowerCase(Locale.ROOT).contains("door")
+                        ) {
+                            continue;
+                        }
                         if (!xssfSheet.getSheetName().toLowerCase(Locale.ROOT).contains("master")) {
                             XSSFRow headRow = xssfSheet.getRow(0);
                             for (Cell cell : headRow) {
@@ -324,14 +336,14 @@ public class Configurators implements Task {
                                             }
                                             catch (NumberFormatException e) {
                                                 qty = 0;
-                                                logger.fatal("Unable to get Item Qty", e);
-                                                System.exit(1);
+                                                //logger.fatal("Unable to get Item Qty", e);
+                                                //System.exit(1);
                                             }
                                         }
                                         else {
                                             qty = 0;
-                                            logger.fatal("Unable to get Item Qty");
-                                            System.exit(1);
+                                            //logger.fatal("Unable to get Item Qty");
+                                            //System.exit(1);
                                         }
                                         if (qty != 0) {
                                             itemGroup.addItem(name, qty);

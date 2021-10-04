@@ -28,7 +28,7 @@ public class DBConnectionPool {
             logger.fatal("Unable to register driver", e);
             System.exit(-1);
         }
-        ds.setUrl("jdbc:sqlserver://192.168.20.232\\SQLEXPRESS:1433;database=POR3");
+        ds.setUrl("jdbc:sqlserver://localhost\\SQLEXPRESS:1433;database=POR3");
         ds.setUsername("dataprocessing");
         ds.setPassword("dataprocessing");
         ds.setMinIdle(5);
